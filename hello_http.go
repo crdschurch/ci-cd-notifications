@@ -30,14 +30,19 @@ func HelloHTTP(w http.ResponseWriter, r *http.Request) {
 		Name string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
-		fmt.Fprint(w, "Hello, World!")
+		fmt.Fprint(w, "Hello, World 1!")
+		//log.Println("This is stderr")
+		fmt.Println("1")
 		return
 	}
 	if d.Name == "" {
-		fmt.Fprint(w, "Hello, World!")
+		fmt.Fprint(w, "Hello, World 2!")
+		fmt.Println("2")
 		return
 	}
 	fmt.Fprintf(w, "Hello, %s!", html.EscapeString(d.Name))
+	fmt.Println("3")
+
 }
 
 // [END functions_helloworld_http]
