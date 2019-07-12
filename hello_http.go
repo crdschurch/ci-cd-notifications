@@ -24,8 +24,8 @@ import (
 	"net/http"
 )
 
-// HelloHTTP is an HTTP Cloud Function with a request parameter.
-func HelloHTTP(w http.ResponseWriter, r *http.Request) {
+// Handle request from Team City
+func TeamCity(w http.ResponseWriter, r *http.Request) {
 	var d struct {
 		Name string `json:"name"`
 	}
@@ -41,7 +41,7 @@ func HelloHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, "Hello, %s!", html.EscapeString(d.Name))
-	fmt.Println("3")
+	fmt.Fprintln("3 Hello, %s!", html.EscapeString(d.Name))
 
 }
 
