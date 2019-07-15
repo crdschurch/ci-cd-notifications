@@ -28,6 +28,9 @@ import (
 func TeamCity(w http.ResponseWriter, r *http.Request) {
 	var d struct {
 		Name string `json:"name"`
+		UserName string `json:"teamcity.build.triggeredBy.username"`
+		URL string `json:"vcsroot.Github.url"`
+		Branch string `json:"teamcity.build.vcs.branch.Github"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		fmt.Fprint(w, "Hello, World 1!")
@@ -40,8 +43,8 @@ func TeamCity(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("2")
 		return
 	}
-	fmt.Fprintf(w, "Hello, %s!", html.EscapeString(d.Name))
-	fmt.Printf("3 Hello, %v! body=%v, ", html.EscapeString(d.Name), json.NewDecoder(r.Body).Decode(d))
+	fmt.Fprintf(w, "Hello, %s!", html.EscapeString(d.UserName))
+	fmt.Printf("3 Hello, %v! URL=%v,Branch=%v, ", html.EscapeString(d.UserName), html.EscapeString(d.URL), html.EscapeString(d.Branch))
 
 }
 
