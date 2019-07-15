@@ -27,10 +27,10 @@ import (
 // Handle request from Team City
 func TeamCity(w http.ResponseWriter, r *http.Request) {
 	var d struct {
-		Name string `json:"name"`
+		//Name string `json:"name"`
 		UserName string `json:"teamcity.build.triggeredBy.username"`
 		URL string `json:"vcsroot.Github.url"`
-		Branch string `json:"teamcity.build.vcs.branch.Github"`
+		Branch string `json:"env.BUILD_VCS_NUMBER_Github"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		fmt.Fprint(w, "Hello, World 1!")
@@ -38,7 +38,7 @@ func TeamCity(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("1")
 		return
 	}
-	if d.Name == "" {
+	if d.UserName == "" {
 		fmt.Fprint(w, "Hello, World 2!")
 		fmt.Println("2")
 		return
