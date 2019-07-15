@@ -41,7 +41,7 @@ func TeamCity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, "Hello, %s!", html.EscapeString(d.Name))
-	fmt.Printf("3 Hello, %s!", html.EscapeString(d.Name))
+	fmt.Printf("3 Hello, %s! body=%s", html.EscapeString(d.Name), r.Body)
 
 }
 
