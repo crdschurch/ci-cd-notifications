@@ -34,7 +34,7 @@ func TeamCity(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		fmt.Fprint(w, "Hello, World 1!")
-		log.Println(err)
+		fmt.Println(err)
 		fmt.Println("1")
 		return
 	}
