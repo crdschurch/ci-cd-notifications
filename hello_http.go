@@ -20,12 +20,11 @@ package helloworld
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	// "log"
 	"net/http"
 	"bytes"
 	"time"
 	"errors"
-	"io/ioutil"
 )
 
 var slackChannelMap = map[string]string {
@@ -73,12 +72,13 @@ func getQueryStringParam(w http.ResponseWriter, r *http.Request, k string) (stri
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	body, e := ioutil.ReadAll(r.Body)
-
-	if e != nil {
-		fmt.Println("There was an error")
-	} else {
-		log.Println(string(body))
+	decoder := json.NewDecoder(r.Body)
+    var body map[string]interface{}
+    err := decoder.Decode(&body)
+    if err != nil {
+        w.WriteHeader(400)
+		w.Write([]byte(fmt.Sprintf("400 - Unable to parse body, error: %v", err)))
+		return
 	}
 
 	channel, ok := getQueryStringParam(w, r, "channel")
@@ -86,20 +86,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pr, ok := getQueryStringParam(w, r, "pr")
-	if !ok {
-		return
-	}
-
-	repo, ok := getQueryStringParam(w, r, "repo")
-	if !ok {
-		return
-	}
-
-	env, ok := getQueryStringParam(w, r, "env")
-	if !ok {
-		return
-	}
+	name := body["name"]
+	deploy_url := body["deploy_url"]
+	commit_ref := body["commit_ref"]
+	branch := body["branch"]
+	commit_url := body["commit_url"]
+	context := body["context"]
+	committer := body["committer"]
+	review_url := body["review_url"]
 
 	webhookUrl := slackChannelMap[channel]
 	if len(webhookUrl) < 1 {
@@ -108,10 +102,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formattedSting := fmt.Sprintf("%v deployed to %v. PR - %v", repo, env, pr)
-	err := sendSlackNotification(webhookUrl, formattedSting)
-    if err != nil {
-        log.Fatal(err)
+	formattedSting := fmt.Sprintf("*%v deployed to %v*.\ndeploy_url: %v\ncommit_ref: %v\n" +
+	"branch: %v\ncommit_url: %v\ncommitter: %v\nreview_url: %v", name, context, deploy_url, commit_ref, branch, commit_url, committer, review_url)
+	slackErr := sendSlackNotification(webhookUrl, formattedSting)
+    if slackErr != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("500 - Failed to send slack notification due to error: %v", slackErr)))
+		return
     }
 	
 	fmt.Fprint(w, fmt.Sprintf("Successfully published deploy status: %v", formattedSting))

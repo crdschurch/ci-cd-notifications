@@ -37,7 +37,7 @@ func TestHelloHTTP(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		rr := httptest.NewRecorder()
-		HelloHTTP(rr, req)
+		Handler(rr, req)
 
 		out, err := ioutil.ReadAll(rr.Result().Body)
 		if err != nil {
