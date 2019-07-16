@@ -14,7 +14,7 @@
 
 // [START functions_http_unit_test]
 
-package main
+package helloworld
 
 import (
 	"io/ioutil"
