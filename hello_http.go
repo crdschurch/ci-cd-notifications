@@ -88,7 +88,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	name := body["name"]
 	deploy_url := body["deploy_url"]
-	commit_ref := body["commit_ref"]
 	branch := body["branch"]
 	commit_url := body["commit_url"]
 	context := body["context"]
@@ -102,8 +101,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formattedSting := fmt.Sprintf("*%v deployed to %v*.\ndeploy_url: %v\ncommit_ref: %v\n" +
-	"branch: %v\ncommit_url: %v\ncommitter: %v\nreview_url: %v", name, context, deploy_url, commit_ref, branch, commit_url, committer, review_url)
+	formattedSting := fmt.Sprintf("*%v* deployed to *%v*.\n*committer:* %v\n*commit_url:* %v\n*review_url:* %v\n*deploy_url:* %v\n" +
+	"*branch:* %v", name, context, committer, commit_url, review_url, deploy_url, branch)
 	slackErr := sendSlackNotification(webhookUrl, formattedSting)
     if slackErr != nil {
 		w.WriteHeader(500)
