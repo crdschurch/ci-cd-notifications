@@ -86,13 +86,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	site_id := body["site_id"]
+	branch := body["branch"]
+	context := body["context"]
 	name := body["name"]
 	deploy_url := body["deploy_url"]
-	branch := body["branch"]
 	commit_url := body["commit_url"]
-	context := body["context"]
 	committer := body["committer"]
 	review_url := body["review_url"]
+
+	//This is hacky but it stops any non production deploys from having their status published in deploy-status
+	if site_id != nil && channel == "deploy-status" && (context != "production" || branch != "master") {
+		fmt.Fprint(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"))
+		return
+	}
 
 	webhookUrl := slackChannelMap[channel]
 	if len(webhookUrl) < 1 {
