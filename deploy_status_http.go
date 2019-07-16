@@ -20,7 +20,7 @@ package deploystatus
 import (
 	"encoding/json"
 	"fmt"
-	// "log"
+	"log"
 	"net/http"
 	"bytes"
 	"time"
@@ -29,6 +29,7 @@ import (
 
 var slackChannelMap = map[string]string {
 	"devy_mcopsface": "https://hooks.slack.com/services/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",
+	"deploy-status": "https://hooks.slack.com/services/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",
 }
 
 type SlackRequestBody struct {
@@ -63,12 +64,20 @@ func getQueryStringParam(w http.ResponseWriter, r *http.Request, k string) (stri
 	param := r.URL.Query().Get(k)
 
 	if len(param) < 1 {
+		responseString := fmt.Sprintf("400 - Missing query string parameter for %v", k)
+		log.Printf(responseString)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("400 - Missing query string parameter for %v", k)))
+		w.Write([]byte(responseString))
 		return "", false
 	}
 
 	return param, true
+}
+
+func logAndWrite(w http.ResponseWriter, message string, statusCode int) {
+	log.Printf(message)
+    w.WriteHeader(statusCode)
+	w.Write([]byte(message))
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -76,8 +85,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
     var body map[string]interface{}
     err := decoder.Decode(&body)
     if err != nil {
-        w.WriteHeader(400)
-		w.Write([]byte(fmt.Sprintf("400 - Unable to parse body, error: %v", err)))
+		logAndWrite(w, fmt.Sprintf("400 - Unable to parse body, error: %v", err), http.StatusBadRequest)
 		return
 	}
 
@@ -97,14 +105,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	//This is hacky but it stops any non production deploys from having their status published in deploy-status
 	if site_id != nil && channel == "deploy-status" && (context != "production" || branch != "master") {
-		fmt.Fprint(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"))
+		logAndWrite(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"), 200)
 		return
 	}
 
 	webhookUrl := slackChannelMap[channel]
 	if len(webhookUrl) < 1 {
-		w.WriteHeader(400)
-		w.Write([]byte(fmt.Sprintf("400 - No slack webhook found for channel: %v. You must add an entry to the slack channels map.", channel)))
+		responseString := fmt.Sprintf("400 - No slack webhook found for channel: %v. You must add an entry to the slack channels map.", channel)
+		logAndWrite(w, responseString, http.StatusBadRequest)
 		return
 	}
 
@@ -112,12 +120,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	"*branch:* %v", name, context, committer, commit_url, review_url, deploy_url, branch)
 	slackErr := sendSlackNotification(webhookUrl, formattedSting)
     if slackErr != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("500 - Failed to send slack notification due to error: %v", slackErr)))
+		responseString := fmt.Sprintf("500 - Failed to send slack notification due to error: %v", slackErr)
+		logAndWrite(w, responseString, 500)
 		return
     }
 	
-	fmt.Fprint(w, fmt.Sprintf("Successfully published deploy status: %v", formattedSting))
+	logAndWrite(w, fmt.Sprintf("Successfully published deploy status: %v", formattedSting), 200)
 }
 
 // func main() {
