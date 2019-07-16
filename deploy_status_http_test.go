@@ -14,7 +14,7 @@
 
 // [START functions_http_unit_test]
 
-package helloworld
+package deploystatus
 
 import (
 	"io/ioutil"
@@ -23,7 +23,7 @@ import (
 	"testing"
 )
 
-func TestHelloHTTP(t *testing.T) {
+func TestHandlerHTTP(t *testing.T) {
 	tests := []struct {
 		body string
 		want string

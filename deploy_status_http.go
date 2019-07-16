@@ -15,7 +15,7 @@
 // [START functions_helloworld_http]
 
 // Package helloworld provides a set of Cloud Functions samples.
-package helloworld
+package deploystatus
 
 import (
 	"encoding/json"
