@@ -117,9 +117,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, fmt.Sprintf("Successfully published deploy status: %v", formattedSting))
 }
 
-func main() {
-    http.HandleFunc("/", Handler)
-    http.ListenAndServe(":8080", nil)
-}
+// func main() {
+//     http.HandleFunc("/", Handler)
+//     http.ListenAndServe(":8080", nil)
+// }
 
 // [END functions_helloworld_http]
