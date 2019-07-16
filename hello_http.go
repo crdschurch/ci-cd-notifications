@@ -36,7 +36,7 @@ type SlackRequestBody struct {
     Text string `json:"text"`
 }
 
-func SendSlackNotification(webhookUrl string, msg string) error {
+func sendSlackNotification(webhookUrl string, msg string) error {
 
     slackBody, _ := json.Marshal(SlackRequestBody{Text: msg})
     req, err := http.NewRequest(http.MethodPost, webhookUrl, bytes.NewBuffer(slackBody))
@@ -72,7 +72,7 @@ func getQueryStringParam(w http.ResponseWriter, r *http.Request, k string) (stri
 	return param, true
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	body, e := ioutil.ReadAll(r.Body)
 
 	if e != nil {
@@ -109,7 +109,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	formattedSting := fmt.Sprintf("%v deployed to %v. PR - %v", repo, env, pr)
-	err := SendSlackNotification(webhookUrl, formattedSting)
+	err := sendSlackNotification(webhookUrl, formattedSting)
     if err != nil {
         log.Fatal(err)
     }
@@ -118,7 +118,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    http.HandleFunc("/", handler)
+    http.HandleFunc("/", Handler)
     http.ListenAndServe(":8080", nil)
 }
 
