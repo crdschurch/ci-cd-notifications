@@ -18,46 +18,46 @@
 package deploystatus
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"bytes"
 	"time"
-	"errors"
 )
 
-var slackChannelMap = map[string]string {
+var slackChannelMap = map[string]string{
 	"devy_mcopsface": "https://hooks.slack.com/services/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",
-	"deploy-status": "https://hooks.slack.com/services/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",
+	"deploy-status":  "https://hooks.slack.com/services/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",
 }
 
 type SlackRequestBody struct {
-    Text string `json:"text"`
+	Text string `json:"text"`
 }
 
 func sendSlackNotification(webhookUrl string, msg string) error {
 
-    slackBody, _ := json.Marshal(SlackRequestBody{Text: msg})
-    req, err := http.NewRequest(http.MethodPost, webhookUrl, bytes.NewBuffer(slackBody))
-    if err != nil {
-        return err
-    }
+	slackBody, _ := json.Marshal(SlackRequestBody{Text: msg})
+	req, err := http.NewRequest(http.MethodPost, webhookUrl, bytes.NewBuffer(slackBody))
+	if err != nil {
+		return err
+	}
 
-    req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Content-Type", "application/json")
 
-    client := &http.Client{Timeout: 10 * time.Second}
-    resp, err := client.Do(req)
-    if err != nil {
-        return err
-    }
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
 
-    buf := new(bytes.Buffer)
-    buf.ReadFrom(resp.Body)
-    if buf.String() != "ok" {
-        return errors.New("Non-ok response returned from Slack")
-    }
-    return nil
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Body)
+	if buf.String() != "ok" {
+		return errors.New("Non-ok response returned from Slack")
+	}
+	return nil
 }
 
 func getQueryStringParam(w http.ResponseWriter, r *http.Request, k string) (string, bool) {
@@ -76,15 +76,15 @@ func getQueryStringParam(w http.ResponseWriter, r *http.Request, k string) (stri
 
 func logAndWrite(w http.ResponseWriter, message string, statusCode int) {
 	log.Printf(message)
-    w.WriteHeader(statusCode)
+	w.WriteHeader(statusCode)
 	w.Write([]byte(message))
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-    var body map[string]interface{}
-    err := decoder.Decode(&body)
-    if err != nil {
+	var body map[string]interface{}
+	err := decoder.Decode(&body)
+	if err != nil {
 		logAndWrite(w, fmt.Sprintf("400 - Unable to parse body, error: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -115,16 +115,29 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formattedSting := fmt.Sprintf("*%v* deployed to *%v*.\n*committer:* %v\n*commit_url:* %v\n*url:* %v\n" +
-	"*branch:* %v", name, context, committer, commit_url, url, branch)
-	slackErr := sendSlackNotification(webhookUrl, formattedSting)
-    if slackErr != nil {
+	formattedString := fmt.Sprintf(
+		`[
+			{
+				"type": "section",
+				"text": {
+					"type": "mrkdwn",
+					"text": "*%v* deployed to *%v* by %v from *branch:* %v \n[<%v|link to commit>]\n[<%v|test>]"
+				},
+				"accessory": {
+					"type": "image",
+					"image_url": "https://cataas.com/cat/jump/says/%v%0Adeployed!?t=or",
+					"alt_text": "meow!"
+				}
+			}
+		]`, name, context, committer, branch, commit_url, url, committer)
+	slackErr := sendSlackNotification(webhookUrl, formattedString)
+	if slackErr != nil {
 		responseString := fmt.Sprintf("500 - Failed to send slack notification due to error: %v", slackErr)
 		logAndWrite(w, responseString, 500)
 		return
-    }
-	
-	logAndWrite(w, fmt.Sprintf("Successfully published deploy status: %v", formattedSting), 200)
+	}
+
+	logAndWrite(w, fmt.Sprintf("Successfully published deploy status: %v", formattedString), 200)
 }
 
 // func main() {
