@@ -101,7 +101,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	deploy_url := body["deploy_url"]
 	commit_url := body["commit_url"]
 	committer := body["committer"]
-	review_url := body["review_url"]
 
 	//This is hacky but it stops any non production deploys from having their status published in deploy-status
 	if site_id != nil && channel == "deploy-status" && (context != "production" || branch != "master") {
@@ -116,8 +115,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formattedSting := fmt.Sprintf("*%v* deployed to *%v*.\n*committer:* %v\n*commit_url:* %v\n*review_url:* %v\n*deploy_url:* %v\n" +
-	"*branch:* %v", name, context, committer, commit_url, review_url, deploy_url, branch)
+	formattedSting := fmt.Sprintf("*%v* deployed to *%v*.\n*committer:* %v\n*commit_url:* %v\n*deploy_url:* %v\n" +
+	"*branch:* %v", name, context, committer, commit_url, deploy_url, branch)
 	slackErr := sendSlackNotification(webhookUrl, formattedSting)
     if slackErr != nil {
 		responseString := fmt.Sprintf("500 - Failed to send slack notification due to error: %v", slackErr)
