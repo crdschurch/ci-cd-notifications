@@ -96,6 +96,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	secondaryChannel := r.URL.Query().Get("secondary_channel")
+
 	site_id := body["site_id"]
 	branch := body["branch"]
 	context := body["context"]
@@ -108,6 +110,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if isNetlify(site_id) && channel == DEPLOYSTATUSCHANNEL && isProdDeploy(context, branch) {
 		logAndWrite(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"), 200)
 		return
+	} else if isNetlify(site_id) && secondaryChannel != "" {
+		channel = secondaryChannel
 	}
 
 	formattedBody := fmt.Sprintf(`{
