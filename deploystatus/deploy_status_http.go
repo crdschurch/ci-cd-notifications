@@ -103,7 +103,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	committer := body["committer"]
 
 	//This is hacky but it stops any non production deploys from having their status published in deploy-status
-	if site_id != nil && channel == "deploy-status" && (context != "production" || branch != "master") {
+	if isNetlify(site_id) && channel == "deploy-status" && isProdDeploy(context, branch) {
 		logAndWrite(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"), 200)
 		return
 	}
@@ -135,4 +135,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logAndWrite(w, fmt.Sprintf("Successfully published deploy status: %v", formattedBody), 200)
+}
+
+func isNetlify(siteId interface{}) bool {
+	return siteId != nil
+}
+
+func isProdDeploy(context, branch interface{}) bool {
+	return context == "production" || branch == "master"
 }
