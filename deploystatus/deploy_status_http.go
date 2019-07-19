@@ -25,26 +25,19 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"os"
 )
 
-var slackChannelMap = map[string]string{
-	"devy_mcopsface": "https://hooks.slack.com/services/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",
-	"deploy-status":  "https://hooks.slack.com/services/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",
-}
-
-type SlackRequestBody struct {
-	Text string `json:"text"`
-}
-
-func sendSlackNotification(webhookUrl string, msg string) error {
-
-	slackBody, _ := json.Marshal(SlackRequestBody{Text: msg})
-	req, err := http.NewRequest(http.MethodPost, webhookUrl, bytes.NewBuffer(slackBody))
+func sendSlackNotification(authToken string, body string) error {
+	log.Printf(body)
+	slackBody := []byte(body)
+	req, err := http.NewRequest(http.MethodPost, "https://api.slack.com/api/chat.postMessage", bytes.NewBuffer(slackBody))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer " + authToken)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
@@ -54,9 +47,16 @@ func sendSlackNotification(webhookUrl string, msg string) error {
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
-	if buf.String() != "ok" {
+	var raw map[string]interface{}
+
+	if e := json.Unmarshal([]byte(buf.String()), &raw); e != nil {
+		return errors.New(fmt.Sprintf("500 - Unable to parse result from slack, error: %v", e))
+	}
+
+	if raw["ok"] != true {
 		return errors.New("Non-ok response returned from Slack")
 	}
+
 	return nil
 }
 
@@ -108,27 +108,31 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webhookUrl := slackChannelMap[channel]
-	if len(webhookUrl) < 1 {
-		responseString := fmt.Sprintf("400 - No slack webhook found for channel: %v. You must add an entry to the slack channels map.", channel)
-		logAndWrite(w, responseString, http.StatusBadRequest)
-		return
-	}
+	formattedBody := fmt.Sprintf(`{
+		"channel": "%v",
+		"blocks": [
+			{
+				"type": "section",
+				"text": {
+					"type": "mrkdwn",
+					"text": "*%v* deployed to *%v* by %v from *branch:* %v [<%v|see commit>] [<%v|validate>]"
+				},
+				"accessory": {
+					"type": "image",
+					"image_url": "https://cataas.com/cat/jump/says/%v%%0Adeployed!?t=or",
+					"alt_text": "meow"
+				}
+			}
+		]
+	}`, channel, name, context, committer, branch, commit_url, url, committer)
 
-	formattedString := fmt.Sprintf("*%v* deployed to *%v* by %v from *branch:* %v [<%v|see commit>] [<%v|validate>]", name, context, committer, branch, commit_url, url)
-	slackErr := sendSlackNotification(webhookUrl, formattedString)
+	slackToken := os.Getenv("SLACK_TOKEN")
+	slackErr := sendSlackNotification(slackToken, formattedBody)
 	if slackErr != nil {
 		responseString := fmt.Sprintf("500 - Failed to send slack notification due to error: %v", slackErr)
 		logAndWrite(w, responseString, 500)
 		return
 	}
 
-	logAndWrite(w, fmt.Sprintf("Successfully published deploy status: %v", formattedString), 200)
+	logAndWrite(w, fmt.Sprintf("Successfully published deploy status: %v", formattedBody), 200)
 }
-
-// func main() {
-//     http.HandleFunc("/", Handler)
-//     http.ListenAndServe(":8080", nil)
-// }
-
-// [END functions_helloworld_http]
