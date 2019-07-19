@@ -28,6 +28,8 @@ import (
 	"os"
 )
 
+var DEPLOYSTATUSCHANNEL = "C835A5T0U"
+
 func sendSlackNotification(authToken string, body string) error {
 	log.Printf(body)
 	slackBody := []byte(body)
@@ -102,8 +104,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	commit_url := body["commit_url"]
 	committer := body["committer"]
 
-	//This is hacky but it stops any non production deploys from having their status published in deploy-status
-	if isNetlify(site_id) && channel == "deploy-status" && isProdDeploy(context, branch) {
+	//This is hacky but it stops any non production deploys in netlify from having their status published in deploy-status
+	if isNetlify(site_id) && channel == DEPLOYSTATUSCHANNEL && isProdDeploy(context, branch) {
 		logAndWrite(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"), 200)
 		return
 	}
