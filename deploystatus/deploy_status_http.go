@@ -108,10 +108,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	//This is hacky but it stops any non production deploys in netlify from having their status published in deploy-status
 	if isNetlify(site_id) && channel == DEPLOYSTATUSCHANNEL && !isProdDeploy(context, branch) {
-		logAndWrite(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"), 200)
-		return
-	} else if isNetlify(site_id) && secondaryChannel != "" {
-		channel = secondaryChannel
+		if secondaryChannel != "" {
+			channel = secondaryChannel
+		} else {
+			logAndWrite(w, fmt.Sprintf("Did not publish status to deploy-status channel because this was not a production deploy"), 200)
+			return
+		}	
 	}
 
 	formattedBody := fmt.Sprintf(`{
