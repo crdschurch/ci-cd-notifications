@@ -115,21 +115,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formattedString := fmt.Sprintf(
-		`[
-			{
-				"type": "section",
-				"text": {
-					"type": "mrkdwn",
-					"text": "*%v* deployed to *%v* by %v from *branch:* %v \n[<%v|link to commit>]\n[<%v|test>]"
-				},
-				"accessory": {
-					"type": "image",
-					"image_url": "https://cataas.com/cat/jump/says/%v%0Adeployed!?t=or",
-					"alt_text": "meow!"
-				}
-			}
-		]`, name, context, committer, branch, commit_url, url, committer)
+	formattedString := fmt.Sprintf("*%v* deployed to *%v* by %v from *branch:* %v [<%v|see commit>] [<%v|validate>]", name, context, committer, branch, commit_url, url)
 	slackErr := sendSlackNotification(webhookUrl, formattedString)
 	if slackErr != nil {
 		responseString := fmt.Sprintf("500 - Failed to send slack notification due to error: %v", slackErr)
